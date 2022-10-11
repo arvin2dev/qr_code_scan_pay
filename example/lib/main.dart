@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:qr_code_scanner/qr_code_scan_pay.dart';
+import 'package:qr_code_scan_pay/qr_code_scan_pay.dart';
 
 void main() => runApp(const MaterialApp(home: MyHome()));
 

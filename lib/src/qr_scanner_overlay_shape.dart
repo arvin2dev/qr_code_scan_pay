@@ -181,3 +181,168 @@ class QrScannerOverlayShape extends ShapeBorder {
     );
   }
 }
+
+
+class OverlayWidget extends StatefulWidget{
+
+  final double width;
+
+
+  OverlayWidget(this.width);
+
+  @override
+  State<StatefulWidget> createState() => OverLayState();
+
+}
+
+class OverLayState extends State<OverlayWidget> with TickerProviderStateMixin{
+  late Animation<double> _animation;
+  late AnimationController _controller;
+
+  //起始之间的线性插值器 从 0.05 到 0.95 百分比。
+  final Tween<double> _rotationTween = Tween(begin: 0.05, end: 0.95);
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,     //实现 TickerProviderStateMixin
+      duration: Duration(seconds: 3), //动画时间 3s
+    );
+
+    _animation = _rotationTween.animate(_controller)
+      ..addListener(() => setState(() {}))
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          _controller.repeat();
+        } else if (status == AnimationStatus.dismissed) {
+          _controller.forward();
+        }
+      });
+
+    _controller.repeat();
+  }
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (BuildContext context, Widget? child) {
+        return CustomPaint(
+          painter: ScanFramePainter(widget.width,lineMoveValue: _controller.value),
+          child: Container(),
+        );
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+}
+
+class ScanFramePainter extends CustomPainter {
+
+  final double width;
+ //默认定义扫描框为 260边长的正方形
+  late Size frameSize;
+  final double cornerLength = 20.0;
+  ScanFramePainter(this.width,{this.lineMoveValue = 0});
+
+  // 百分比值，0 ~ 1，然后计算Y坐标
+  final double lineMoveValue;
+
+
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    frameSize = Size.square(width);
+    // 按扫描框居中来计算，全屏尺寸与扫描框尺寸的差集 除以 2 就是扫描框的位置
+    Offset diff = (size - frameSize) as Offset;
+    double leftTopX = diff.dx / 2;
+    double leftTopY = diff.dy / 2;
+    //根据左上角的坐标和扫描框的大小可得知扫描框矩形
+    var rect =
+    Rect.fromLTWH(leftTopX, leftTopY, frameSize.width, frameSize.height);
+    // 4个点的坐标
+    Offset leftTop = rect.topLeft;
+    Offset leftBottom = rect.bottomLeft;
+    Offset rightTop = rect.topRight;
+    Offset rightBottom = rect.bottomRight;
+
+    //定义画笔
+    Paint paint = Paint()
+      ..color = Colors.white  //颜色
+      ..strokeWidth = 1.0   //画笔线条宽度
+      ..style = PaintingStyle.stroke; // 画笔的模式，填充还是只绘制边框
+    canvas.drawRect(rect, paint);
+
+    Paint bgPaint = Paint()
+      ..color = Color(0xb0000000) //透明灰
+      ..style = PaintingStyle.fill;
+    //绘制罩层
+    //左侧矩形
+    canvas.drawRect(Rect.fromLTRB(0, 0, leftTopX, size.height), bgPaint);
+    //右侧矩形
+    canvas.drawRect(
+      Rect.fromLTRB(rightTop.dx, 0, size.width, size.height),
+      bgPaint,
+    );
+    //中上矩形
+    canvas.drawRect(Rect.fromLTRB(leftTopX, 0, rightTop.dx, leftTopY), bgPaint);
+    //中下矩形
+    canvas.drawRect(
+      Rect.fromLTRB(leftBottom.dx, leftBottom.dy, rightBottom.dx, size.height),
+      bgPaint,
+    );
+    // 重新设置画笔
+
+    paint
+      ..color = Colors.white
+      ..strokeWidth = 3.0
+      ..strokeCap = StrokeCap.round  // 解决因为线宽导致交界处不是直角的问题
+      ..style = PaintingStyle.stroke;
+
+    // 横向线条的坐标偏移
+    Offset horizontalOffset = Offset(cornerLength, 0);
+    // 纵向线条的坐标偏移
+    Offset verticalOffset = Offset(0, cornerLength);
+    // 左上角
+    canvas.drawLine(leftTop, leftTop + horizontalOffset, paint);
+    canvas.drawLine(leftTop, leftTop + verticalOffset, paint);
+    // 左下角
+    canvas.drawLine(leftBottom, leftBottom + horizontalOffset, paint);
+    canvas.drawLine(leftBottom, leftBottom - verticalOffset, paint);
+    // 右上角
+    canvas.drawLine(rightTop, rightTop - horizontalOffset, paint);
+    canvas.drawLine(rightTop, rightTop + verticalOffset, paint);
+    // 右下角
+    canvas.drawLine(rightBottom, rightBottom - horizontalOffset, paint);
+    canvas.drawLine(rightBottom, rightBottom - verticalOffset, paint);
+    //修改画笔线条宽度
+    paint.strokeWidth = 2;
+    // 扫描线的移动值
+    var lineY = leftTopY + frameSize.height * lineMoveValue - 20;
+
+    // 10 为线条与方框之间的间距，绘制扫描线
+    var shaderRect = Rect.fromLTWH(leftTopX + 1, lineY, frameSize.width - 2, 20);
+    paint.style = PaintingStyle.fill;
+    paint.shader = LinearGradient(begin: Alignment.topCenter,end: Alignment.bottomCenter,colors: [Color.fromRGBO(41,97,216,0),Color.fromRGBO(41,97,216,0.9)]).createShader(shaderRect);
+    canvas.drawRect(
+      shaderRect,
+      paint,
+    );
+
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    // 返回true 则会重新绘制，执行 paint函数，返回false 则不会重新绘制
+    return true;
+  }
+
+}
+

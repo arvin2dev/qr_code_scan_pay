@@ -120,16 +120,10 @@ class _QRViewState extends State<QRView> {
             stream: stream,
             initialData: false,
             builder: (context, asy) {
-              return Padding(
-                padding: widget.overlayMargin,
-                child: Container(
-                  decoration: ShapeDecoration(
-                    shape: asy.data ?? false
-                        ? QrScannerOverlayShape(borderWidth: 0,borderLength: 0,cutOutSize: 0)
-                        : widget.overlay!,
-                  ),
-                ),
-              );
+              return Visibility(
+                  visible: !(asy.data ?? false),
+                  child:
+                      OverlayWidget(MediaQuery.of(context).size.width * 2 / 3));
             }),
         StreamBuilder<bool>(
             stream: stream,
@@ -290,10 +284,10 @@ class QRViewController {
   bool get hasPermissions => _hasPermissions;
 
   // 显示错误提示 并停止扫码
-  showError(bool show){
-    if(show){
+  showError(bool show) {
+    if (show) {
       pauseCamera();
-    }else{
+    } else {
       resumeCamera();
     }
     _scanErrorUpdateController.add(show);

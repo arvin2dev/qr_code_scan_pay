@@ -1,7 +1,7 @@
 name: qr_code_scan_pay
 description: qr code scan pay
-version: 0.0.1
-homepage:
+version: 0.0.5
+homepage: https://github.com/arvin2dev/qr_code_scan_pay
 
 environment:
   sdk: ">=2.12.0 <3.0.0"
